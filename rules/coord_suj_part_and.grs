@@ -1,0 +1,88 @@
+% ---------------------------------------------------------
+% SUJET PARTAGEE RULE1 
+% She came and left.
+% ---------------------------------------------------------
+
+rule coord_suj_part_and  
+{
+
+	pattern {
+		A [lemma="and"];
+		V1 [pos="v"];
+		V2 [pos="v"];
+		m: A-> V1; 
+		a: A-> V2; 
+		s1: V1-> S;
+		s2: V2-> S; V1<<V2
+		  }
+        without {V1<A; A<V2 }
+	commands { del_edge s1; A.coord=yes; add_edge k: V2-> A; k.label=s2.label; S.select=yes; S.sub=yes; S.sujet=yes; V2.vb=yes; del_edge s2;}}
+
+rule deletion { 
+pattern {	 
+       A [coord=yes];
+       e: K-[MOD:EQ]-> L ; 
+       A << e;
+         
+        }
+    commands {del_edge e; }    } 
+    
+package propagate {
+	rule down {
+	pattern { N[select]; Z1[!select]; N -> Z1; }
+	commands { Z1.select = yes }}
+
+	rule up {
+	pattern {N[select]; Z2[!select]; Z2 -> N; 
+    Z2<N 
+    } 
+	commands { Z2.select = yes }} }
+    
+ rule copy_node{ 
+	pattern {S[select=yes]; V2[vb=yes];}
+	without {X[select=yes]; S > X;}
+	commands{ del_feat S.select; add_node S_copy:<V2; append_feats S ==> S_copy; add_edge S -[copy:yes]-> S_copy; del_feat S.sujet
+    }}  
+    
+rule copy_edge{
+	pattern {A1 -[copy:yes]-> A2;B1 -[copy:yes]-> B2;e: A1 -> B1}
+	without {f: A2 -> B2; e.label = f.label}
+	commands{add_edge f: A2 -> B2; f.label = e.label;}}
+
+rule del_copy_edge{
+	pattern { c: A1 -[copy:yes]-> A2 ; }
+	commands { del_edge c; }}	
+    
+rule return_node {
+	pattern { A [lemma="and"];V1 [pos="v"]; A->V1; c:V2->A;
+    V2 [vb=yes]; 
+   S2[sujet=yes]; 
+    }
+
+	commands { 
+   add_edge d:V2->S2; d.label=c.label; del_edge c; del_feat S2.sujet; del_feat S2.sub; 
+    del_feat V2.vb;
+		}}  
+
+        
+rule del_nodes {
+	pattern { A [lemma="and"];V1 [pos="v"]; S1[sub=yes]; A->V1; A>>V1;
+    }
+
+	commands { 
+   
+   add_edge V1-[ARG1:NEQ]->S1; del_feat S1.sub;
+    del_node A; 
+  
+		}}       
+strat coord1
+{
+Seq (coord_suj_part_and,
+deletion,
+Onf(propagate), 
+Onf(copy_node),
+Onf(copy_edge),
+Onf(del_copy_edge),
+return_node,
+del_nodes,
+)}

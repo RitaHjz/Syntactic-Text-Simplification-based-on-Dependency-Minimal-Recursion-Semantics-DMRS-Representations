@@ -1,0 +1,61 @@
+% ---------------------------------------------------------
+% SUJET PARTAGEE RULE2 
+% She came but left.
+% 
+% ---------------------------------------------------------
+
+rule coord_suj_part_but  
+{
+
+	pattern {
+		A [lemma="but"|"or"|"nor"|"so"];
+		V1 [pos="v"];
+		V2 [pos="v"];
+		m: A-[ARG1:EQ]-> V1; 
+		a: A-[ARG2:EQ]-> V2; 
+		s1: V1-> S;
+		s2: V2-> S;
+		f: V2-[MOD:EQ]->V1  }
+        
+	commands { del_edge s1; del_edge s2; del_edge f; S.select=yes; S.sub=yes; S.sujet=yes; V2.vb=yes}}
+   
+package propagate {
+	rule down {
+	pattern { N[select]; Z1[!select]; N -> Z1; }
+	commands { Z1.select = yes }}
+
+	rule up {
+	pattern {N[select]; Z2[!select]; Z2 -> N; Z2-[RSTR:H]->N } 
+	commands { Z2.select = yes }} }
+    
+ rule copy_node{ 
+	pattern {S[select=yes]; V2[vb=yes];}
+	without {X[select=yes];S > X;}
+	commands{ del_feat S.select; add_node S_copy:<V2; append_feats S ==> S_copy; add_edge S -[copy:yes]-> S_copy; del_feat S.sujet
+    }}  
+    
+rule copy_edge{
+	pattern {A1 -[copy:yes]-> A2;B1 -[copy:yes]-> B2;e: A1 -> B1}
+	without {f: A2 -> B2; e.label = f.label}
+	commands{add_edge f: A2 -> B2; f.label = e.label;}}
+
+rule del_copy_edge{
+	pattern { c: A1 -[copy:yes]-> A2 }
+	commands { del_edge c;}}	
+    
+rule return_node {
+	pattern { A [lemma="but"|"or"|"nor"|"so"];V1 [pos="v"]; c:A->V1; S1[sub=yes]; V2 [vb=yes]; S2[sujet=yes]; }
+    
+	commands {del_edge c; add_edge V2-[ARG1:NEQ]->S2; add_edge V1-[ARG1:NEQ]->S1; del_feat S1.sub; del_feat S2.sujet; del_feat S2.sub; del_feat V2.vb;
+		}}    
+    
+    
+strat coord2
+{
+Seq (coord_suj_part_but,
+Onf(propagate), 
+Onf(copy_node),
+Onf(copy_edge),
+Onf(del_copy_edge),
+return_node,
+)}

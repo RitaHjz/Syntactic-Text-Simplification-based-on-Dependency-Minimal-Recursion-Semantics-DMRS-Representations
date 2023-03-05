@@ -1,0 +1,33 @@
+% ---------------------------------------------------------
+% RULE2 Sujet partage avec "BUT" a garder
+% She came But he left.
+% ---------------------------------------------------------
+
+rule select_coordi
+{
+
+	pattern {
+		A [lemma="but"|"or"|"nor"|"so"];
+		V1 [pos="v"];
+		V2 [pos="v"];
+		m: A-> V1; V2>>A;
+		a: A-> V2;}
+        
+commands {A.select=yes; del_edge m}}
+
+rule deletion { 
+pattern {	 
+       A [lemma="but"|"or"|"nor"|"so"];
+       e: K-[MOD:EQ]-> L ; 
+       A << e;
+         
+        }
+    commands {del_edge e; }    }
+
+strat coord_nonpart_but 
+{Seq (
+select_coordi,
+deletion
+)}
+
+

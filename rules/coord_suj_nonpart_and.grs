@@ -1,0 +1,33 @@
+% ---------------------------------------------------------
+% RULE1 Sujet partage avec "and" a supprimer
+% She came and he left.
+% ---------------------------------------------------------
+
+rule select_coord
+{
+
+	pattern {
+		A [lemma="and"];
+		V1 [pos="v"];
+		V2 [pos="v"];
+		m: A-> V1;
+		a: A-> V2;}
+        commands {A.select=yes}}
+
+rule deletion { 
+pattern {
+	 
+       A [lemma="and"];
+       e: K-[MOD:EQ]-> L ; 
+       A << e;
+         
+        }
+    commands {del_edge e; 
+    del_node A;}    }
+
+strat coord 
+{Seq (
+select_coord,
+deletion
+)}
+        

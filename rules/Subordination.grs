@@ -1,0 +1,52 @@
+% ---------------------------------------------------------
+% RULE SUBORDINATION
+% ---------------------------------------------------------
+rule subord {
+	pattern { 
+		A [gpred= "subord"];
+		V1 [pos=v];
+		V2 [pos=v];
+		n1: A-[ARG1:H]->V1;
+		n2: A-[ARG2:H]->V2;
+		s1: V1->S;  }
+		
+	commands {
+		V2.PROG=V1.PROG; V2.TENSE=V1.TENSE; S.select=yes; S.sujet=yes; del_node A; S.subj=yes; del_edge s1; V1.vb1=yes; V2.vb2=yes}}
+
+package propagate {
+	rule down {
+	pattern { N[select]; Z1[!select]; N -> Z1; }
+	commands { Z1.select = yes }}
+
+	rule up {
+	pattern {N[select]; Z2[!select]; Z2 -> N;  } 
+	commands { Z2.select = yes }} }
+    
+ rule copy_node{ 
+	pattern {S[select=yes]; V2[vb2=yes];}
+	without {X[select=yes]; S > X;}
+	commands{ del_feat S.select; add_node S_copy:<V2; append_feats S ==> S_copy; add_edge S -[copy:yes]-> S_copy; del_feat S.subj
+    }}  
+    
+rule copy_edge{
+	pattern {A1 -[copy:yes]-> A2;B1 -[copy:yes]-> B2;e: A1 -> B1}
+	without {f: A2 -> B2; e.label = f.label}
+	commands{add_edge f: A2 -> B2; f.label = e.label;}}
+
+rule del_copy_edge{
+	pattern { c: A1 -[copy:yes]-> A2 }
+	commands { del_edge c;}}	
+    
+rule add_nodes{
+	pattern {S2[subj=yes]; V2[vb2=yes]; S1[sujet=yes, !subj]; V1[vb1=yes]; V2>>S2; S1<<V1;  }
+	commands { add_edge V2-[ARG1:NEQ]->S2; add_edge V1-[ARG1:NEQ]->S1; del_feat S2.subj; del_feat S1.sujet; del_feat S2.sujet; del_feat V1.vb1 ; del_feat V2.vb2}}
+    
+strat subordination
+{
+Seq (subord,
+Onf(propagate), 
+Onf(copy_node),
+Onf(copy_edge),
+Onf(del_copy_edge),
+add_nodes,
+)}    
