@@ -1,1 +1,0 @@
-# Syntactic-Text-Simplification-based-on-Dependency-Minimal-Recursion-Semantics-DMRS-Representations
